@@ -1,0 +1,46 @@
+{
+    "name": "nice-yu/think-dto",
+    "description": "Elegant Data Transfer Objects for ThinkPHP",
+    "keywords": [
+        "thinkphp",
+        "dto",
+        "data-transfer-object",
+        "validation",
+        "request"
+    ],
+    "homepage": "https://github.com/nice-yu/think-dto",
+    "type": "library",
+    "license": "MIT",
+    "authors": [{
+        "name": "nice-yu",
+        "email": "nice-yu@qq.com",
+        "homepage": "https://github.com/nice-yu",
+        "role": "Developer"
+    }],
+    "require": {
+        "php": ">=8.0",
+        "topthink/framework": "^8.0",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "NiceYu\\ThinkDto\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NiceYu\\ThinkDto\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "extra": {
+        "think": {
+            "services": [
+                "NiceYu\\ThinkDto\\DtoService"
+            ]
+        }
+    }
+}
