@@ -6,6 +6,7 @@ namespace NiceYu\ThinkDto\Resolvers;
 use DateTime;
 use NiceYu\ThinkDto\Annotations\Validator;
 use NiceYu\ThinkDto\Annotations\ValidatorGroup;
+use NiceYu\ThinkDto\Annotations\ValidatorIgnore;
 use NiceYu\ThinkDto\Contracts\DtoInterface;
 use NiceYu\ThinkDto\Exceptions\ValidateException;
 use ReflectionClass;
@@ -23,18 +24,32 @@ class DtoArgumentResolver
      */
     public function resolve(DtoInterface $object, RuleItem $ruleItem): DtoInterface
     {
-        $route = $ruleItem->getRoute();
-        /** @noinspection PhpStrFunctionsInspection */
-        if (strpos($route, '@') === false) {
-            return $object;
-        }
-
-        /** 解析控制器和方法 */
-        [$controllerClass, $action] = explode('@', $route, 2);
-        if (!class_exists($controllerClass) || !method_exists($controllerClass, $action)) {
-            return $object;
-        }
         try {
+            /** 反射 dto */
+            $reflection = new ReflectionClass($object);
+            $data = $ruleItem->getVars();
+
+            /**
+             * 类级别 - 忽略验证
+             * @noinspection PhpUndefinedMethodInspection
+             */
+            if(count($reflection->getAttributes(ValidatorIgnore::class)) > 0) {
+                return $object;
+            }
+
+            /** 获取到路由信息 */
+            $route = $ruleItem->getRoute();
+            /** @noinspection PhpStrFunctionsInspection */
+            if (strpos($route, '@') === false) {
+                return $object;
+            }
+
+            /** 解析控制器和方法 */
+            [$controllerClass, $action] = explode('@', $route, 2);
+            if (!class_exists($controllerClass) || !method_exists($controllerClass, $action)) {
+                return $object;
+            }
+
             /** 获取到控制器方法中使用的验证组 */
             $groups = ['default'];
             $method = new ReflectionMethod($controllerClass, $action);
@@ -45,13 +60,21 @@ class DtoArgumentResolver
                 break;
             }
 
-            /** 反射 dto */
-            $reflection = new ReflectionClass($object);
-            $data = $ruleItem->getVars();
-
             /** 验证和赋值流程 */
             $validate = new Validate();
             foreach ($reflection->getProperties() as $property) {
+                /**
+                 * 忽略验证 - 方法
+                 * @noinspection PhpUndefinedMethodInspection
+                 */
+                foreach($property->getAttributes(ValidatorIgnore::class) as $attr) {
+                    $ignore = $attr->newInstance();
+                    /** 如果忽略注解没有定义groups，或者当前组在忽略组中 */
+                    if(empty($ignore->groups) || array_intersect($groups, $ignore->groups)) {
+                        continue 2;
+                    }
+                }
+
                 $name = $property->getName();
                 $value = $data[$name] ?? null;
 

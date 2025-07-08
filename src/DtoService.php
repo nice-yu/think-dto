@@ -11,7 +11,6 @@ class DtoService extends Service
 {
     public function boot(): void
     {
-
         $this->app->resolving(function ($object, $app) {
             if (!$object instanceof DtoInterface) {
                 return;
