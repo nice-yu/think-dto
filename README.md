@@ -16,7 +16,7 @@ composer require nice-yu/think-dto
 
 ## 更新说明
 
-### v1.1 版本更新
+### v2.0 版本更新
 1. **新增验证组忽略功能**：
     - 通过 `ValidatorIgnore` 注解实现特定场景下属性忽略
     - 支持类级别和方法级别的全局忽略
