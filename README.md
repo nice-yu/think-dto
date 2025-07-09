@@ -5,33 +5,65 @@
 - 🎯 多验证组支持（不同场景使用不同验证规则）
 - ⚡ 无缝集成 ThinkPHP8 参数解析
 - 📦 类型安全的属性转换（自动处理 int/float/bool/array/DateTime 等类型）
-- 🔍 **新增：智能属性忽略功能**（按验证组动态忽略属性）
+- v2.0 **智能属性忽略功能**（按验证组动态忽略属性）
+- v2.1 **强化类型安全转换引擎**
+- v2.1 **优化验证逻辑执行效率**
 
-## 安装
+## 📦 安装指南
 ```bash
 composer require nice-yu/think-dto
 ```
 
+## 🐞 bug 修复
+1. **验证组穿透问题**  
+   修复多验证组场景下忽略规则意外生效的问题
+
+2. **空数组处理**  
+   `null` → `[]` 的转换现在符合预期行为
+
+
 ---
 
-## 更新说明
+## ✨ 新增特性
 
-### v2.0 版本更新
-1. **新增验证组忽略功能**：
-    - 通过 `ValidatorIgnore` 注解实现特定场景下属性忽略
-    - 支持类级别和方法级别的全局忽略
-    - 示例：
-        ```php
-          #[ValidatorIgnore] // 类级别全局忽略
-          class UserDto extends Dto {
-              #[ValidatorIgnore(groups: ['api'])] // 仅对api组忽略
-              public string $internal_id;
-          }
-        ```
+### 1. 智能验证忽略系统
+#### 多级控制策略
+| 控制层级       | 注解示例                          | 应用场景                 |
+|----------------|-----------------------------------|------------------------|
+| **类级别**     | `#[ValidatorIgnore]`             | 全局跳过验证            |
+| **属性级**     | `#[ValidatorIgnore(groups: ['export'])]` | 敏感字段条件过滤        |
 
-2. **修复关键问题**：
-    - 修正验证组忽略逻辑中的循环中断问题
-    - 优化类型转换的性能和安全性
+#### 典型应用
+```php
+#[ValidatorIgnore] // 内部系统跳过全部验证
+class AuditDto extends Dto {
+    #[Validator(rule: 'require')]
+    #[Validator(rule: 'max:100')]
+    public string $title;
+    
+    #[ValidatorIgnore(groups: ['report'])] // 报表场景跳过审计人验证
+    #[Validator(rule: 'number')]
+    public int $auditor_id;
+}
+```
+
+### 2. 类型安全增强
+- 严格模式下的类型转换
+  ```php
+  // 旧版: "123abc" → 123
+  // 新版: "123abc" → 0 (严格模式)
+  public int $id;
+  ```
+- 日期解析优化
+  ```php
+  // 支持更多格式自动标准化
+  "9:30" → "当前日期 09:30:00" // ✅ 纯时分
+  "9:30:11" → "当前日期 09:30:11" // ✅ 纯时间
+  "2025-1-1" → "2025-01-01 00:00:00" // ✅ 纯日期
+  "2025-1-1 9:30" → "2025-01-01 09:30" // ✅ 日期+时分
+  "2025-1-1 01:23:45" → "2025-01-01 01:23:45" // ✅ 完整日期时间
+  "2025/01/01 12.34.56" → "2025-01-01 12:34:56" // ✅ 非常规分隔符
+  ```
 
 ---
 
@@ -53,7 +85,7 @@ class UserController
 }
 ```
 
-### 2. DTO 定义（新增忽略功能）
+### 2. DTO 定义（忽略功能和验证功能）
 ```php
 use NiceYu\ThinkDto\Dto;
 use NiceYu\ThinkDto\Annotations\Validator;
@@ -61,11 +93,11 @@ use NiceYu\ThinkDto\Annotations\ValidatorIgnore;
 
 class UserDto extends Dto
 {
-    #[Validator(rule: 'require|max:25', groups: ['api'])]
+    #[Validator(rule: 'require', groups: ['api'])] // 只会在 api 组验证
     public string $username;
     
     #[ValidatorIgnore(groups: ['internal'])] // 组级别忽略验证
-    #[Validator(rule: 'email', groups: ['api'])]
+    #[Validator(rule: 'email', groups: ['api'])] // 只会在 api 组验证
     public string $email;
     
     #[ValidatorIgnore] // 全忽略验证
@@ -114,19 +146,4 @@ app/
         └── Product/
             ├── DetailResponse.php
             └── ListResponse.php
-```
-### 忽略策略优化
-| 策略类型      | 适用场景           | 示例代码                                       |
-|-----------|----------------|--------------------------------------------|
-| **类级别忽略** | 整个DTO在特定场景跳过验证 | `#[ValidatorIgnore(groups: ['internal'])]` |
-| **属性级忽略** | 敏感/临时字段        | `#[ValidatorIgnore(groups: ['export'])]`   |
-| **条件忽略**  | 动态业务场景         | 通过`empty($ignore->groups)`判断               |
-
-### 版本升级建议
-```diff
-# composer.json
-"require": {
--    "nice-yu/think-dto": "^1.0",
-+    "nice-yu/think-dto": "^2.0",
-}
 ```

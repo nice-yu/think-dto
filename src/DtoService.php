@@ -15,7 +15,8 @@ class DtoService extends Service
             if (!$object instanceof DtoInterface) {
                 return;
             }
-            $object = (new DtoArgumentResolver())->resolve($object, $app->request->rule());
+            /** @noinspection PhpUnusedLocalVariableInspection */
+            $object = (new DtoArgumentResolver())->resolve($object, $app->request);
         });
     }
 }
